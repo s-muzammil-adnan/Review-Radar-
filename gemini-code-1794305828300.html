@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Radar - Sentiment Intelligence HUD</title>
+    <!-- Google Fonts for Sci-Fi HUD look -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #030706;
+            --radar-green: #00ff66;
+            --radar-dim-green: rgba(0, 255, 102, 0.15);
+            --radar-red: #ff3333;
+            --radar-dim-red: rgba(255, 51, 51, 0.15);
+            --hud-border: #00b34d;
+            --hud-glow: rgba(0, 255, 102, 0.4);
+            --panel-bg: rgba(2, 15, 8, 0.85);
+            --text-glow: 0 0 10px rgba(0, 255, 102, 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--radar-green);
+            font-family: 'Share Tech Mono', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Scanline CRT effect */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 999;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+
+        header {
+            border-bottom: 2px solid var(--hud-border);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(180deg, rgba(0,40,15,0.8) 0%, rgba(3,7,6,0.9) 100%);
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.2);
+        }
+
+        .logo-area h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 1.5rem;
+            letter-spacing: 3px;
+            text-shadow: var(--text-glow);
+        }
+
+        .logo-area p {
+            font-size: 0.8rem;
+            color: #88ffbb;
+            letter-spacing: 1px;
+        }
+
+        .system-status {
+            display: flex;
+            gap: 20px;
+            font-size: 0.85rem;
+        }
+
+        .status-pill {
+            border: 1px solid var(--hud-border);
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: rgba(0, 50, 20, 0.4);
+        }
+
+        .status-pill span {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 420px;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+            flex: 1;
+        }
+
+        @media (max-width: 1100px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .hud-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--hud-border);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: inset 0 0 20px rgba(0, 255, 102, 0.05), 0 0 10px rgba(0, 255, 102, 0.1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hud-panel::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            width: 10px; height: 10px;
+            border-top: 2px solid var(--radar-green);
+            border-right: 2px solid var(--radar-green);
+        }
+
+        .hud-panel::before {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 10px; height: 10px;
+            border-bottom: 2px solid var(--radar-green);
+            border-left: 2px solid var(--radar-green);
+        }
+
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            border-bottom: 1px dashed rgba(0, 255, 102, 0.3);
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Radar Display Section */
+        .radar-stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            min-height: 400px;
+        }
+
+        #radarCanvas {
+            width: 100%;
+            max-width: 450px;
+            height: 450px;
+            border-radius: 50%;
+            box-shadow: 0 0 30px rgba(0, 255, 102, 0.2);
+            background: radial-gradient(circle, #011408
